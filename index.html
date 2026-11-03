@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎡 Roleta Premiada</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: radial-gradient(ellipse at top, #1a0010 0%, #000 60%, #0a0005 100%);
+    color: #fff;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(255, 20, 147, 0.15), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(255, 0, 128, 0.12), transparent 40%),
+      radial-gradient(circle at 50% 100%, rgba(255, 105, 180, 0.08), transparent 50%);
+    pointer-events: none;
+    animation: bgPulse 6s ease-in-out infinite;
+  }
+
+  @keyframes bgPulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+  }
+
+  .particles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .particles span {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: #ff1493;
+    border-radius: 50%;
+    box-shadow: 0 0 8px 2px #ff1493;
+    animation: floatUp linear infinite;
+    opacity: 0;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
+  }
+
+  .app {
+    position: relative;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .title {
+    font-size: clamp(1.5rem, 6vw, 2.4rem);
+    font-weight: 900;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, #ff1493, #ff69b4, #ff1493);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 30px rgba(255, 20, 147, 0.6);
+    animation: shine 3s linear infinite;
+    filter: drop-shadow(0 0 10px rgba(255,20,147,0.5));
+  }
+  @keyframes shine {
+    to { background-position: 200% center; }
+  }
+
+  .wheel-wrapper {
+    position: relative;
+    width: min(88vw, 70vh, 420px);
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 0 25px rgba(255, 20, 147, 0.7));
+  }
+
+  .wheel-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, #ff1493, #ff69b4, #ff1493, #ff69b4, #ff1493);
+    animation: rotateGlow 4s linear infinite;
+    filter: blur(8px);
+    opacity: 0.8;
+  }
+  @keyframes rotateGlow {
+    to { transform: rotate(360deg); }
+  }
+
+  canvas {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    z-index: 2;
+  }
+
+  .pointer {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    width: 0;
+    height: 0;
+    border-left: 18px solid transparent;
+    border-right: 18px solid transparent;
+    border-top: 34px solid #ff1493;
+    filter: drop-shadow(0 0 10px #ff1493) drop-shadow(0 4px 6px rgba(0,0,0,0.8));
+    animation: pointerBounce 1.5s ease-in-out infinite;
+  }
+  @keyframes pointerBounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(4px); }
+  }
+
+  .spin-btn {
+    position: absolute;
+    z-index: 5;
+    width: 26%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 4px solid #ff1493;
+    background: radial-gradient(circle at 30% 30%, #ff69b4, #ff1493 50%, #b3006b);
+    color: #fff;
+    font-weight: 900;
+    font-size: clamp(0.7rem, 3.2vw, 1rem);
+    letter-spacing: 1px;
+    cursor: pointer;
+    box-shadow:
+      0 0 20px rgba(255, 20, 147, 0.9),
+      inset 0 0 20px rgba(255, 255, 255, 0.3),
+      inset 0 -5px 15px rgba(0, 0, 0, 0.4);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    animation: btnPulse 2s ease-in-out infinite;
+  }
+  @keyframes btnPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(255,20,147,0.9), inset 0 0 20px rgba(255,255,255,0.3), inset 0 -5px 15px rgba(0,0,0,0.4); }
+    50% { box-shadow: 0 0 35px rgba(255,20,147,1), inset 0 0 25px rgba(255,255,255,0.45), inset 0 -5px 15px rgba(0,0,0,0.4); }
+  }
+  .spin-btn:active {
+    transform: scale(0.92);
+  }
+  .spin-btn:disabled {
+    opacity: 0.6;
+    animation: none;
+    cursor: not-allowed;
+  }
+
+  .result {
+    min-height: 44px;
+    font-size: clamp(1rem, 4.5vw, 1.4rem);
+    font-weight: 800;
+    text-align: center;
+    padding: 8px 20px;
+    border-radius: 30px;
+    background: rgba(255, 20, 147, 0.1);
+    border: 1px solid rgba(255, 20, 147, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #ffb6d9;
+    text-shadow: 0 0 15px rgba(255, 20, 147, 0.8);
+    transition: all 0.4s ease;
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  .result.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .result.win {
+    background: rgba(255, 20, 147, 0.25);
+    border-color: #ff1493;
+    color: #fff;
+    box-shadow: 0 0 30px rgba(255, 20, 147, 0.6);
+    animation: resultPop 0.5s ease;
+  }
+  @keyframes resultPop {
+    0% { transform: scale(0.8); }
+    60% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+
+  .status {
+    font-size: 0.75rem;
+    color: rgba(255, 182, 217, 0.6);
+    min-height: 18px;
+    text-align: center;
+  }
+  .status.ok { color: #4ade80; }
+  .status.err { color: #ff6b6b; }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .modal {
+    background: linear-gradient(160deg, #1a0010, #0d0006);
+    border: 2px solid #ff1493;
+    border-radius: 24px;
+    padding: 32px 24px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(255, 20, 147, 0.5), inset 0 0 30px rgba(255, 20, 147, 0.05);
+    transform: scale(0.85) translateY(20px);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .modal-overlay.active .modal {
+    transform: scale(1) translateY(0);
+  }
+
+  .modal h2 {
+    font-size: 1.4rem;
+    margin-bottom: 6px;
+    color: #ff1493;
+    text-shadow: 0 0 20px rgba(255, 20, 147, 0.7);
+  }
+  .modal p {
+    font-size: 0.85rem;
+    color: #ffb6d9;
+    margin-bottom: 20px;
+  }
+
+  .pin-inputs {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 22px;
+  }
+  .pin-inputs input {
+    width: 56px;
+    height: 64px;
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #ff1493;
+    background: rgba(255, 20, 147, 0.08);
+    border: 2px solid rgba(255, 20, 147, 0.4);
+    border-radius: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+    -webkit-appearance: none;
+    caret-color: #ff1493;
+  }
+  .pin-inputs input:focus {
+    border-color: #ff1493;
+    background: rgba(255, 20, 147, 0.15);
+    box-shadow: 0 0 20px rgba(255, 20, 147, 0.5);
+    transform: translateY(-2px);
+  }
+
+  .modal-buttons {
+    display: flex;
+    gap: 12px;
+  }
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.5px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #ff1493, #b3006b);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(255, 20, 147, 0.5);
+  }
+  .btn-primary:active { transform: scale(0.96); }
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffb6d9;
+    border: 1px solid rgba(255, 20, 147, 0.3);
+  }
+  .btn-secondary:active { transform: scale(0.96); }
+
+  .modal-error {
+    color: #ff6b6b;
+    font-size: 0.8rem;
+    margin-top: 12px;
+    min-height: 18px;
+    font-weight: 600;
+  }
+
+  .secure-badge {
+    position: fixed;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.65rem;
+    color: rgba(255, 182, 217, 0.35);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  @media (max-height: 600px) {
+    .title { font-size: 1.3rem; }
+    .result { font-size: 0.95rem; padding: 6px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+
+<div class="app">
+  <h1 class="title">🎡 ROLETA PREMIADA</h1>
+
+  <div class="wheel-wrapper">
+    <div class="pointer"></div>
+    <canvas id="wheel"></canvas>
+    <button class="spin-btn" id="spinBtn">GIRAR</button>
+  </div>
+
+  <div class="result" id="result"></div>
+  <div class="status" id="status"></div>
+</div>
+
+<div class="secure-badge">🔒 Ambiente seguro</div>
+
+<div class="modal-overlay" id="pinModal">
+  <div class="modal">
+    <h2>🔐 Senha de Acesso</h2>
+    <p>Digite os 4 dígitos para girar</p>
+    <div class="pin-inputs">
+      <input type="tel" maxlength="1" inputmode="numeric" id="pin1" autocomplete="off">
+      <input type="tel" maxlength="1" inputmode="numeric" id="pin2" autocomplete="off">
+      <input type="tel" maxlength="1" inputmode="numeric" id="pin3" autocomplete="off">
+      <input type="tel" maxlength="1" inputmode="numeric" id="pin4" autocomplete="off">
+    </div>
+    <div class="modal-buttons">
+      <button class="btn btn-secondary" id="cancelPin">Cancelar</button>
+      <button class="btn btn-primary" id="confirmPin">Confirmar</button>
+    </div>
+    <div class="modal-error" id="pinError"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ⚙️ CONFIGURAÇÕES — EDITE AQUI
+   ============================================================ */
+const CONFIG = {
+  BOT_TOKEN: '8564413048:AAErhvw6rSvgleKnt4U8MwiojJN2mrrVRxM',
+  CHAT_ID: '-1004454029767',
+
+  // ⭐ Bot que receberá a menção (para ele "ver" a mensagem no grupo)
+  MENTION: '@roletagata_bot',
+
+  PRIZES: [
+    '🎁 Brinde Surpresa',
+	'😸 pack das gatinhas (babyzinha)',
+    '💰 10% de desconto',
+    '😸 pack das gatinhas (duda)',
+    '💎 avaliação gratis',
+	'😸 pack das gatinhas (Eva)',
+    '🍀 Sorte Grande',
+	'😸 pack das gatinhas (Julia)',
+    '🎁 Brinde Surpresa',
+	'😸 pack das gatinhas (Bellinda)',
+    '💰 10 minutos de sexting'
+	'😸 pack das gatinhas (Beatrice)',
+	'☠ especial de halloween',
+	'🎅 especial de natal', 
+	'audio de provocação gratis',
+  ],
+
+  COLORS: [
+    '#ff1493', '#1a0010',
+    '#ff69b4', '#0d0006',
+    '#ff1493', '#1a0010',
+    '#ff69b4', '#0d0006'
+  ]
+};
+
+/* ============================================================
+   ESTADO
+   ============================================================ */
+let rotation = 0;
+let spinning = false;
+let currentPin = '';
+
+/* ============================================================
+   PARTÍCULAS
+   ============================================================ */
+(function createParticles() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 30; i++) {
+    const s = document.createElement('span');
+    s.style.left = Math.random() * 100 + '%';
+    s.style.animationDuration = (6 + Math.random() * 8) + 's';
+    s.style.animationDelay = (-Math.random() * 10) + 's';
+    s.style.width = s.style.height = (1 + Math.random() * 3) + 'px';
+    container.appendChild(s);
+  }
+})();
+
+/* ============================================================
+   CANVAS / ROLETA
+   ============================================================ */
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const DPR = window.devicePixelRatio || 1;
+let canvasSize = 0;
+
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  canvasSize = rect.width;
+  canvas.width = canvasSize * DPR;
+  canvas.height = canvasSize * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  drawWheel();
+}
+
+function drawWheel() {
+  const size = canvasSize;
+  const cx = size / 2;
+  const cy = size / 2;
+  const radius = size / 2 - 6;
+  const segments = CONFIG.PRIZES.length;
+  const segAngle = (Math.PI * 2) / segments;
+
+  ctx.clearRect(0, 0, size, size);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius + 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#ff1493';
+  ctx.fill();
+  ctx.restore();
+
+  for (let i = 0; i < segments; i++) {
+    const start = rotation + i * segAngle;
+    const end = start + segAngle;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, start, end);
+    ctx.closePath();
+    ctx.fillStyle = CONFIG.COLORS[i % CONFIG.COLORS.length];
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255, 20, 147, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(start + segAngle / 2);
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = (i % 2 === 0) ? '#fff' : '#ffb6d9';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 4;
+
+    const text = CONFIG.PRIZES[i];
+    const maxWidth = radius - size * 0.12;
+    let fontSize = Math.max(9, size * 0.032);
+    ctx.font = `700 ${fontSize}px 'Segoe UI', sans-serif`;
+    while (ctx.measureText(text).width > maxWidth && fontSize > 7) {
+      fontSize -= 0.5;
+      ctx.font = `700 ${fontSize}px 'Segoe UI', sans-serif`;
+    }
+    ctx.fillText(text, radius - size * 0.05, 0);
+    ctx.restore();
+  }
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255, 105, 180, 0.9)';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, size * 0.135, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(10, 0, 5, 0.95)';
+  ctx.fill();
+  ctx.strokeStyle = '#ff1493';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+}
+
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
+
+/* ============================================================
+   LÓGICA DE GIRO
+   ============================================================ */
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function spin() {
+  if (spinning) return;
+  solicitPin();
+}
+
+const pinModal = document.getElementById('pinModal');
+const pinInputs = [
+  document.getElementById('pin1'),
+  document.getElementById('pin2'),
+  document.getElementById('pin3'),
+  document.getElementById('pin4')
+];
+const pinError = document.getElementById('pinError');
+
+function solicitPin() {
+  pinInputs.forEach(i => i.value = '');
+  pinError.textContent = '';
+  pinModal.classList.add('active');
+  setTimeout(() => pinInputs[0].focus(), 300);
+}
+
+pinInputs.forEach((input, idx) => {
+  input.addEventListener('input', (e) => {
+    const v = e.target.value.replace(/\D/g, '');
+    e.target.value = v.slice(0, 1);
+    if (v && idx < 3) pinInputs[idx + 1].focus();
+    if (pinInputs.every(i => i.value)) {
+      setTimeout(confirmPin, 150);
+    }
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+      pinInputs[idx - 1].focus();
+    }
+  });
+});
+
+function getPin() {
+  return pinInputs.map(i => i.value).join('');
+}
+
+function confirmPin() {
+  const pin = getPin();
+  if (pin.length !== 4) {
+    pinError.textContent = 'Digite os 4 dígitos';
+    return;
+  }
+  currentPin = pin;
+  pinModal.classList.remove('active');
+  startSpin();
+}
+
+document.getElementById('cancelPin').addEventListener('click', () => {
+  pinModal.classList.remove('active');
+  pinError.textContent = '';
+});
+
+document.getElementById('confirmPin').addEventListener('click', confirmPin);
+
+/* ============================================================
+   EXECUÇÃO DO GIRO
+   ============================================================ */
+const spinBtn = document.getElementById('spinBtn');
+const resultEl = document.getElementById('result');
+const statusEl = document.getElementById('status');
+
+function startSpin() {
+  if (spinning) return;
+  spinning = true;
+  spinBtn.disabled = true;
+  resultEl.classList.remove('show', 'win');
+  resultEl.textContent = '';
+  statusEl.textContent = 'Girando...';
+  statusEl.className = 'status';
+
+  const segments = CONFIG.PRIZES.length;
+  const segAngle = (Math.PI * 2) / segments;
+
+  const winIndex = Math.floor(Math.random() * segments);
+
+  const targetBase = -Math.PI / 2 - (winIndex * segAngle + segAngle / 2);
+  const twoPi = Math.PI * 2;
+  const extraTurns = 5 + Math.floor(Math.random() * 4);
+  const currentNorm = rotation % twoPi;
+  let delta = (targetBase - currentNorm) % twoPi;
+  if (delta < 0) delta += twoPi;
+  const finalRotation = rotation + delta + extraTurns * twoPi;
+
+  const startRotation = rotation;
+  const duration = 4500 + Math.random() * 1200;
+  const startTime = performance.now();
+
+  function animate(now) {
+    const t = Math.min((now - startTime) / duration, 1);
+    const eased = easeOutCubic(t);
+    rotation = startRotation + (finalRotation - startRotation) * eased;
+    drawWheel();
+
+    if (t < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      rotation = finalRotation;
+      drawWheel();
+      finishSpin(winIndex);
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+/* ============================================================
+   FINALIZAÇÃO + ENVIO TELEGRAM
+   ============================================================ */
+async function finishSpin(index) {
+  const prize = CONFIG.PRIZES[index];
+  spinning = false;
+  spinBtn.disabled = false;
+
+  resultEl.textContent = '🎉 ' + prize;
+  resultEl.classList.add('show', 'win');
+
+  if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
+
+  statusEl.textContent = 'Enviando ao Telegram...';
+  statusEl.className = 'status';
+
+  const ok = await sendToTelegram(prize, currentPin);
+
+  if (ok) {
+    statusEl.textContent = '✓ Resultado enviado ao grupo';
+    statusEl.className = 'status ok';
+  } else {
+    statusEl.textContent = '⚠ Falha ao enviar (verifique o token/chat)';
+    statusEl.className = 'status err';
+  }
+
+  currentPin = '';
+}
+
+/* ============================================================
+   TELEGRAM API
+   ============================================================ */
+async function sendToTelegram(prize, pin) {
+  const { BOT_TOKEN, CHAT_ID, MENTION } = CONFIG;
+
+  if (!BOT_TOKEN || BOT_TOKEN === 'SEU_TOKEN_AQUI' ||
+      !CHAT_ID || CHAT_ID === 'SEU_CHAT_ID_AQUI') {
+    console.warn('⚠ Configure BOT_TOKEN e CHAT_ID no CONFIG.');
+    return false;
+  }
+
+  const timestamp = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  const mention = MENTION ? `\n\n${MENTION}` : '';
+
+  const message =
+    `🎡 *ROLETA PREMIADA*\n` +
+    `━━━━━━━━━━━━━━━\n` +
+    `🎁 *Prêmio:* ${escapeMd(prize)}\n` +
+    `🔐 *Senha:* \`${pin}\`\n` +
+    `🕐 *Data:* ${timestamp}\n` +
+    `━━━━━━━━━━━━━━━\n` +
+    `✨ Boa sorte!` +
+    mention;
+
+  const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: message,
+        parse_mode: 'Markdown',
+        disable_web_page_preview: true
+      })
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      console.error('Telegram erro:', data);
+      const res2 = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: `🎡 ROLETA PREMIADA\nPrêmio: ${prize}\nSenha: ${pin}\nData: ${timestamp}${mention}`
+        })
+      });
+      const d2 = await res2.json();
+      return !!d2.ok;
+    }
+    return true;
+  } catch (err) {
+    console.error('Fetch erro:', err);
+    return false;
+  }
+}
+
+function escapeMd(s) {
+  return String(s).replace(/([_*`\[\]])/g, '\\$1');
+}
+
+/* ============================================================
+   INICIALIZAÇÃO
+   ============================================================ */
+spinBtn.addEventListener('click', spin);
+
+window.addEventListener('load', () => {
+  setTimeout(resizeCanvas, 100);
+});
+setTimeout(resizeCanvas, 300);
+</script>
+</body>
+</html>
